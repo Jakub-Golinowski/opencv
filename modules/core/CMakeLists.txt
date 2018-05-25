@@ -17,6 +17,10 @@ if(HAVE_TBB)
   list(APPEND extra_libs tbb)
 endif()
 
+if(HAVE_HPX)
+  list(APPEND extra_libs hpx)
+endif()
+
 if(DEFINED WINRT AND NOT DEFINED ENABLE_WINRT_MODE_NATIVE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /ZW")
 endif()

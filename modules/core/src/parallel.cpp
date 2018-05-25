@@ -39,6 +39,8 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
+//TODO delete this and declare HAVE_HPX in CMAKE
+#define HAVE_HPX
 
 #include "precomp.hpp"
 
@@ -95,6 +97,29 @@
     #endif
     #undef min
     #undef max
+#elif defined HAVE_HPX
+    #include <hpx/hpx.hpp>
+    #include <hpx/hpx_init.hpp>
+    //
+    #include <hpx/parallel/algorithms/for_loop.hpp>
+    #include <hpx/parallel/execution.hpp>
+    //
+    #include <hpx/runtime/resource/partitioner.hpp>
+    #include <hpx/runtime/threads/cpu_mask.hpp>
+    #include <hpx/runtime/threads/detail/scheduled_thread_pool_impl.hpp>
+    #include <hpx/runtime/threads/executors/pool_executor.hpp>
+    //
+    #include <hpx/include/iostreams.hpp>
+    #include <hpx/include/runtime.hpp>
+    //
+    #include <cmath>
+    #include <cstddef>
+    #include <iostream>
+    #include <memory>
+    #include <set>
+    #include <stdexcept>
+    #include <string>
+    #include <utility>
 #elif defined HAVE_OPENMP
     #include <omp.h>
 #elif defined HAVE_GCD
@@ -109,6 +134,8 @@
 
 #if defined HAVE_TBB
 #  define CV_PARALLEL_FRAMEWORK "tbb"
+#elif defined HAVE_HPX
+#  define CV_PARALLEL_FRAMEWORK "hpx"
 #elif defined HAVE_OPENMP
 #  define CV_PARALLEL_FRAMEWORK "openmp"
 #elif defined HAVE_GCD
