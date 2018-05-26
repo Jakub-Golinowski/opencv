@@ -17,10 +17,6 @@ if(HAVE_TBB)
   list(APPEND extra_libs tbb)
 endif()
 
-if(HAVE_HPX)
-  list(APPEND extra_libs hpx)
-endif()
-
 if(DEFINED WINRT AND NOT DEFINED ENABLE_WINRT_MODE_NATIVE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /ZW")
 endif()
@@ -71,6 +67,16 @@ ocv_target_link_libraries(${the_module} LINK_PRIVATE
     "${ITT_LIBRARIES}"
     "${OPENCV_HAL_LINKER_LIBS}"
 )
+
+if(HAVE_HPX)
+  if(NOT TARGET hpx)
+    message("WARNING HPX IS NOT A TARGET")
+  else()
+    message("HPX IS A TARGET")
+  endif()
+  ocv_target_link_libraries(${the_module} LINK_PRIVATE "${HPX_LIBRARIES}")
+endif()
+
 
 if(HAVE_CUDA)
   ocv_target_compile_definitions(${the_module} PUBLIC OPENCV_TRAITS_ENABLE_DEPRECATED)

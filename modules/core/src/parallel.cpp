@@ -39,8 +39,6 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
-//TODO delete this and declare HAVE_HPX in CMAKE
-#define HAVE_HPX
 
 #include "precomp.hpp"
 
@@ -81,6 +79,7 @@
 
 /* IMPORTANT: always use the same order of defines
    - HAVE_TBB         - 3rdparty library, should be explicitly enabled
+   - HAVE_HPX         - 3rdparty library, should be explicitly enabled
    - HAVE_OPENMP      - integrated to compiler, should be explicitly enabled
    - HAVE_GCD         - system wide, used automatically        (APPLE only)
    - WINRT            - system wide, used automatically        (Windows RT only)
@@ -99,7 +98,6 @@
     #undef max
 #elif defined HAVE_HPX
     #include <hpx/hpx.hpp>
-    #include <hpx/hpx_init.hpp>
     //
     #include <hpx/parallel/algorithms/for_loop.hpp>
     #include <hpx/parallel/execution.hpp>
@@ -404,6 +402,25 @@ namespace
             tbb::parallel_for(tbb::blocked_range<int>(range.start, range.end), *this);
         }
     };
+#elif defined HAVE_HPX
+    class ProxyLoopBody : public ParallelLoopBodyWrapper
+    {
+    public:
+        ProxyLoopBody(ParallelLoopBodyWrapperContext& ctx_)
+        : ParallelLoopBodyWrapper(ctx_)
+        {}
+
+        void operator ()() const  // run parallel job
+        {
+            cv::Range range = this->stripeRange();
+            hpx::parallel::for_loop_strided(
+                    hpx::parallel::execution::par,
+                    range.start, range.end, 1,
+                    [&](const int& i){
+                        ctx.body->operator()(cv::Range(i,i+1));
+                    });
+        }
+    };
 #elif defined HAVE_GCD
     typedef ParallelLoopBodyWrapper ProxyLoopBody;
     static void block_function(void* context, size_t index)
@@ -436,6 +453,9 @@ static int numThreads = -1;
     #else
         static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::deferred);
     #endif
+#elif defined HAVE_HPX
+//TODO: figure out what is the proper way of setting numThreads variable
+//setNumThreads(hpx::get_num_worker_threads());
 #elif defined HAVE_OPENMP
 static int numThreadsMax = omp_get_max_threads();
 #elif defined HAVE_GCD
@@ -535,6 +555,8 @@ static void parallel_for_impl(const cv::Range& range, const cv::ParallelLoopBody
         pbody();
 #endif
 
+#elif defined HAVE_HPX
+        pbody();
 #elif defined HAVE_OPENMP
 
         #pragma omp parallel for schedule(dynamic) num_threads(numThreads > 0 ? numThreads : numThreadsMax)
@@ -729,6 +751,8 @@ int cv::getThreadNum(void)
     #else
         return 0;
     #endif
+#elif defined HAVE_HPX
+    return hpx::get_num_worker_threads();
 #elif defined HAVE_OPENMP
     return omp_get_thread_num();
 #elif defined HAVE_GCD
