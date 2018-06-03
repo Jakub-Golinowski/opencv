@@ -97,27 +97,8 @@
     #undef min
     #undef max
 #elif defined HAVE_HPX
-    #include <hpx/hpx.hpp>
-    //
     #include <hpx/parallel/algorithms/for_loop.hpp>
     #include <hpx/parallel/execution.hpp>
-    //
-    #include <hpx/runtime/resource/partitioner.hpp>
-    #include <hpx/runtime/threads/cpu_mask.hpp>
-    #include <hpx/runtime/threads/detail/scheduled_thread_pool_impl.hpp>
-    #include <hpx/runtime/threads/executors/pool_executor.hpp>
-    //
-    #include <hpx/include/iostreams.hpp>
-    #include <hpx/include/runtime.hpp>
-    //
-    #include <cmath>
-    #include <cstddef>
-    #include <iostream>
-    #include <memory>
-    #include <set>
-    #include <stdexcept>
-    #include <string>
-    #include <utility>
 #elif defined HAVE_OPENMP
     #include <omp.h>
 #elif defined HAVE_GCD
@@ -412,10 +393,11 @@ namespace
 
         void operator ()() const  // run parallel job
         {
-            cv::Range range = this->stripeRange();
+//            cv::Range range = this->stripeRange();
+            cv::Range wholeRange = this->ctx.wholeRange;
             hpx::parallel::for_loop_strided(
                     hpx::parallel::execution::par,
-                    range.start, range.end, 1,
+                    wholeRange.start, wholeRange.end, 1,
                     [&](const int& i){
                         ctx.body->operator()(cv::Range(i,i+1));
                     });
