@@ -393,7 +393,15 @@ namespace
 
         void operator ()() const  // run parallel job
         {
-//            cv::Range range = this->stripeRange();
+#ifdef HPX_NSTRIPES
+            cv::Range stripeRange = this->stripeRange();
+            hpx::parallel::for_loop_strided(
+                    hpx::parallel::execution::par,
+                    stripeRange.start, stripeRange.end, 1,
+                    [&](const int& i){ ;
+                        this->ParallelLoopBodyWrapper::operator()(cv::Range(i, i+1));
+                    });
+#else
             cv::Range wholeRange = this->ctx.wholeRange;
             hpx::parallel::for_loop_strided(
                     hpx::parallel::execution::par,
@@ -401,6 +409,7 @@ namespace
                     [&](const int& i){
                         ctx.body->operator()(cv::Range(i,i+1));
                     });
+#endif
         }
     };
 #elif defined HAVE_GCD

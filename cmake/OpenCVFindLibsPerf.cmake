@@ -10,12 +10,18 @@ endif(WITH_TBB)
 # --- HPX ---
 if(WITH_HPX)
   find_package(HPX REQUIRED)
-  #get_target_property(_lib HPX::hpx IMPORTED_LOCATION_RELEASE)
-  #message(STATUS "Found TBB (cmake): ${_lib}")
   ocv_include_directories(${HPX_INCLUDE_DIRS})
-  #list(APPEND OPENCV_LINKER_LIBS hpx)
   set(HAVE_HPX TRUE)
 endif(WITH_HPX)
+
+if(WITH_HPX_NSTRIPES)
+  set(HPX_NSTRIPES TRUE)
+endif(WITH_HPX_NSTRIPES)
+
+if(WITH_HPX_STARTSTOP)
+  set(HPX_STARTSTOP TRUE)
+endif(WITH_HPX_STARTSTOP)
+
 
 # --- IPP ---
 if(WITH_IPP)

@@ -69,11 +69,6 @@ ocv_target_link_libraries(${the_module} LINK_PRIVATE
 )
 
 if(HAVE_HPX)
-  if(NOT TARGET hpx)
-    message("WARNING HPX IS NOT A TARGET")
-  else()
-    message("HPX IS A TARGET")
-  endif()
   ocv_target_link_libraries(${the_module} LINK_PRIVATE "${HPX_LIBRARIES}")
 endif()
 
