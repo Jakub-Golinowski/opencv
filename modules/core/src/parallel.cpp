@@ -99,6 +99,12 @@
 #elif defined HAVE_HPX
     #include <hpx/parallel/algorithms/for_loop.hpp>
     #include <hpx/parallel/execution.hpp>
+    //
+    #include <hpx/hpx_start.hpp>
+    #include <hpx/hpx_suspend.hpp>
+    #include <hpx/include/apply.hpp>
+    #include <hpx/util/yield_while.hpp>
+    #include <hpx/include/threadmanager.hpp>
 #elif defined HAVE_OPENMP
     #include <omp.h>
 #elif defined HAVE_GCD
@@ -393,22 +399,45 @@ namespace
 
         void operator ()() const  // run parallel job
         {
+#ifdef HPX_STARTSTOP
+            int my_argc = 1;
+            char str[] = "backend_launch";
+            char* str_ptr = str;
+            char * my_argv[] = {str_ptr};
+            hpx::start(nullptr, my_argc, my_argv);
+
+            // Wait for runtime to start
+            hpx::runtime* rt = hpx::get_runtime_ptr();
+            hpx::util::yield_while(
+                    [rt](){
+                        return rt->get_state() < hpx::state_running;
+                    });
+            hpx::apply( [&]() {
+#endif
+
 #ifdef HPX_NSTRIPES
-            cv::Range stripeRange = this->stripeRange();
-            hpx::parallel::for_loop_strided(
-                    hpx::parallel::execution::par,
-                    stripeRange.start, stripeRange.end, 1,
-                    [&](const int& i){ ;
-                        this->ParallelLoopBodyWrapper::operator()(cv::Range(i, i+1));
-                    });
+                cv::Range stripeRange = this->stripeRange();
+                hpx::parallel::for_loop(
+                        hpx::parallel::execution::par,
+                        stripeRange.start, stripeRange.end,
+                        [&](const int &i) { ;
+                            this->ParallelLoopBodyWrapper::operator()(
+                                    cv::Range(i, i + 1));
+                        });
+
 #else
-            cv::Range wholeRange = this->ctx.wholeRange;
-            hpx::parallel::for_loop_strided(
-                    hpx::parallel::execution::par,
-                    wholeRange.start, wholeRange.end, 1,
-                    [&](const int& i){
-                        ctx.body->operator()(cv::Range(i,i+1));
-                    });
+                cv::Range wholeRange = this->ctx.wholeRange;
+                hpx::parallel::for_loop(
+                        hpx::parallel::execution::par,
+                        wholeRange.start, wholeRange.end,
+                        [&](const int& i){
+                            ctx.body->operator()(cv::Range(i,i+1));
+                        });
+#endif
+#ifdef HPX_STARTSTOP
+            });
+            hpx::apply([]() { hpx::finalize(); });
+            hpx::stop();
 #endif
         }
     };

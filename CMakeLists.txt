@@ -252,7 +252,7 @@ OCV_OPTION(WITH_WIN32UI        "Build with Win32 UI Backend support"         ON 
 OCV_OPTION(WITH_QUICKTIME      "Use QuickTime for Video I/O"                 OFF  IF APPLE )
 OCV_OPTION(WITH_QTKIT          "Use QTKit Video I/O backend"                 OFF  IF APPLE )
 OCV_OPTION(WITH_TBB            "Include Intel TBB support"                   OFF  IF (NOT IOS AND NOT WINRT) )
-OCV_OPTION(WITH_HPX            "Include Ste||ar HPX support"                 OFF)
+OCV_OPTION(WITH_HPX            "Include Ste||ar Group HPX support"           OFF)
 OCV_OPTION(WITH_HPX_NSTRIPES   "Consider OCV partitioning in HPX backend"    OFF)
 OCV_OPTION(WITH_HPX_STARTSTOP  "Start-Stop HPX runtime for each backend call" OFF)
 OCV_OPTION(WITH_OPENMP         "Include OpenMP support"                      OFF)
