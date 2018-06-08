@@ -105,6 +105,12 @@
     #include <hpx/include/apply.hpp>
     #include <hpx/util/yield_while.hpp>
     #include <hpx/include/threadmanager.hpp>
+    //
+    #include <opencv2/core/parallel.hpp>
+    int __argc = 0;
+    char** __argv = nullptr;
+    int num_pus = 1;
+
 #elif defined HAVE_OPENMP
     #include <omp.h>
 #elif defined HAVE_GCD
@@ -400,11 +406,17 @@ namespace
         void operator ()() const  // run parallel job
         {
 #ifdef HPX_STARTSTOP
-            int my_argc = 1;
-            char str[] = "backend_launch";
-            char* str_ptr = str;
-            char * my_argv[] = {str_ptr};
-            hpx::start(nullptr, my_argc, my_argv);
+
+            std::vector<std::string> const cfg = {
+                    // make sure hpx_main is always executed
+                    "hpx.run_hpx_main!=1",
+                    // allow for unknown command line options
+                    "hpx.commandline.allow_unknown!=1",
+                    // disable HPX' short options
+                    "hpx.commandline.aliasing!=0"
+            };
+
+            hpx::start(nullptr, __argc, __argv, cfg);
 
             // Wait for runtime to start
             hpx::runtime* rt = hpx::get_runtime_ptr();
@@ -412,13 +424,17 @@ namespace
                     [rt](){
                         return rt->get_state() < hpx::state_running;
                     });
-            hpx::apply( [&]() {
+
+            hpx::apply([&]() {
 #endif
 
 #ifdef HPX_NSTRIPES
+                //Setting chunk size to 1 in order to respect nstripes partitioning
+                hpx::parallel::execution::static_chunk_size fixed(1);
+
                 cv::Range stripeRange = this->stripeRange();
                 hpx::parallel::for_loop(
-                        hpx::parallel::execution::par,
+                        hpx::parallel::execution::par.with(fixed),
                         stripeRange.start, stripeRange.end,
                         [&](const int &i) { ;
                             this->ParallelLoopBodyWrapper::operator()(
