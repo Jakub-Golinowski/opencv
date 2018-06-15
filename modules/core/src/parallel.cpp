@@ -410,13 +410,16 @@ namespace
             std::vector<std::string> const cfg = {
                     // make sure hpx_main is always executed
                     "hpx.run_hpx_main!=1",
-                    // allow for unknown command line options
-                    "hpx.commandline.allow_unknown!=1",
-                    // disable HPX' short options
-                    "hpx.commandline.aliasing!=0"
+                    // set the number of threads based on OpenCV numThreads var
+                    "hpx.os_threads=" + std::to_string(getNumThreads())
             };
 
-            hpx::start(nullptr, __argc, __argv, cfg);
+            int my_argc = 1;
+            char app[] = "backend_launch";
+            char* app_ptr = app;
+            char * my_argv[] = {app_ptr, nullptr};
+
+            hpx::start(nullptr, my_argc, my_argv, cfg);
 
             // Wait for runtime to start
             hpx::runtime* rt = hpx::get_runtime_ptr();
@@ -429,12 +432,17 @@ namespace
 #endif
 
 #ifdef HPX_NSTRIPES
-                //Setting chunk size to 1 in order to respect nstripes partitioning
-                hpx::parallel::execution::static_chunk_size fixed(1);
+                hpx::parallel::execution::parallel_policy par;
+
+                // Use fixed chunk size only with meaningful nstripes value
+                if(ctx.nstripes > 0){
+                    hpx::parallel::execution::static_chunk_size chunk_size(1);
+                    par.with(chunk_size);
+                }
 
                 cv::Range stripeRange = this->stripeRange();
                 hpx::parallel::for_loop(
-                        hpx::parallel::execution::par.with(fixed),
+                        par,
                         stripeRange.start, stripeRange.end,
                         [&](const int &i) { ;
                             this->ParallelLoopBodyWrapper::operator()(
@@ -490,8 +498,7 @@ static int numThreads = -1;
         static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::deferred);
     #endif
 #elif defined HAVE_HPX
-//TODO: figure out what is the proper way of setting numThreads variable
-//setNumThreads(hpx::get_num_worker_threads());
+// nothing for HPX
 #elif defined HAVE_OPENMP
 static int numThreadsMax = omp_get_max_threads();
 #elif defined HAVE_GCD
@@ -663,7 +670,8 @@ int cv::getNumThreads(void)
            ? numThreads
            : tbb::task_scheduler_init::default_num_threads();
 #endif
-
+#elif defined HAVE_HPX
+    return numThreads;
 #elif defined HAVE_OPENMP
 
     return numThreads > 0
@@ -737,6 +745,7 @@ void cv::setNumThreads( int threads_ )
     if(tbbScheduler.is_active()) tbbScheduler.terminate();
     if(threads > 0) tbbScheduler.initialize(threads);
 #endif
+#elif defined HAVE_HPX
 
 #elif defined HAVE_OPENMP
 
