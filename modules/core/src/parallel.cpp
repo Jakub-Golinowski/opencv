@@ -430,34 +430,14 @@ namespace
 
             hpx::apply([&]() {
 #endif
-
-#ifdef HPX_NSTRIPES
-                hpx::parallel::execution::parallel_policy par;
-
-                // Use fixed chunk size only with meaningful nstripes value
-                if(ctx.nstripes > 0){
-                    hpx::parallel::execution::static_chunk_size chunk_size(1);
-                    par.with(chunk_size);
-                }
-
                 cv::Range stripeRange = this->stripeRange();
                 hpx::parallel::for_loop(
-                        par,
+                        hpx::parallel::execution::par,
                         stripeRange.start, stripeRange.end,
                         [&](const int &i) { ;
                             this->ParallelLoopBodyWrapper::operator()(
                                     cv::Range(i, i + 1));
                         });
-
-#else
-                cv::Range wholeRange = this->ctx.wholeRange;
-                hpx::parallel::for_loop(
-                        hpx::parallel::execution::par,
-                        wholeRange.start, wholeRange.end,
-                        [&](const int& i){
-                            ctx.body->operator()(cv::Range(i,i+1));
-                        });
-#endif
 #ifdef HPX_STARTSTOP
             });
             hpx::apply([]() { hpx::finalize(); });
