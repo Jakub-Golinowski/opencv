@@ -2835,6 +2835,10 @@ protected:
                     for( i = 0; i < N; i++ )
                         data[i] = data0[rng.uniform(0, N0)];
 
+                    std::cout << "Calling KMeans on vector with following params:"
+                              << " K = " << K
+                              << " N = " << N
+                              << std::endl;
                     kmeans(data, K, labels, TermCriteria(TermCriteria::MAX_ITER+TermCriteria::EPS, 30, 0),
                            5, KMEANS_PP_CENTERS, centers);
                 }
@@ -2880,6 +2884,12 @@ protected:
                         break;
                     }
 
+                    std::cout << "Calling KMeans on cv::Mat with following params:"
+                              << " K = " << K
+                              << " | N = " << N
+                              << " | data.rows = " << data.rows
+                              << " | data.cols = " << data.cols
+                              << std::endl;
                     kmeans(data, K, labels, TermCriteria(TermCriteria::MAX_ITER+TermCriteria::EPS, 30, 0),
                            5, KMEANS_PP_CENTERS, centers);
                 }

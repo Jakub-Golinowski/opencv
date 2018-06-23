@@ -139,6 +139,7 @@
 #  define CV_PARALLEL_FRAMEWORK "pthreads"
 #endif
 
+#include <thread>
 #include "parallel_impl.hpp"
 
 
@@ -419,6 +420,7 @@ namespace
             char* app_ptr = app;
             char * my_argv[] = {app_ptr, nullptr};
 
+            std::cout << "hpx::start()" << std::endl;
             hpx::start(nullptr, my_argc, my_argv, cfg);
 
             // Wait for runtime to start
@@ -427,10 +429,15 @@ namespace
                     [rt](){
                         return rt->get_state() < hpx::state_running;
                     });
-
+            std::cout << "hpx::apply(hpx::parallel_for)" << std::endl;
             hpx::apply([&]() {
 #endif
                 cv::Range stripeRange = this->stripeRange();
+                std::cout << "hpx::parallel_for with:"
+                          << " stripeRange.start = " << stripeRange.start
+                          << " | stripeRange.end = " << stripeRange.end
+                          << std::endl;
+
                 hpx::parallel::for_loop(
                         hpx::parallel::execution::par,
                         stripeRange.start, stripeRange.end,
@@ -440,7 +447,11 @@ namespace
                         });
 #ifdef HPX_STARTSTOP
             });
-            hpx::apply([]() { hpx::finalize(); });
+            std::cout << "hpx::apply(hpx::finalize())" << std::endl;
+            hpx::apply([]() {
+                std::cout << "hpx::finalize()" << std::endl;
+                hpx::finalize(); });
+            std::cout << "hpx::stop()" << std::endl;
             hpx::stop();
 #endif
         }
@@ -530,6 +541,8 @@ void cv::parallel_for_(const cv::Range& range, const cv::ParallelLoopBody& body,
     if (range.empty())
         return;
 
+    std::cout << "parallel_for_() called from " << std::this_thread::get_id()
+              << std::endl;
 #ifdef CV_PARALLEL_FRAMEWORK
     static volatile int flagNestedParallelFor = 0;
     bool isNotNestedRegion = flagNestedParallelFor == 0;
@@ -551,6 +564,7 @@ void cv::parallel_for_(const cv::Range& range, const cv::ParallelLoopBody& body,
     else // nested parallel_for_() calls are not parallelized
 #endif // CV_PARALLEL_FRAMEWORK
     {
+        std::cout << "sequential_run (because nested)" << std::endl;
         (void)nstripes;
         body(range);
     }
@@ -559,6 +573,7 @@ void cv::parallel_for_(const cv::Range& range, const cv::ParallelLoopBody& body,
 #ifdef CV_PARALLEL_FRAMEWORK
 static void parallel_for_impl(const cv::Range& range, const cv::ParallelLoopBody& body, double nstripes)
 {
+    std::cout << "parallel_for_impl() called" << std::endl;
     if ((numThreads < 0 || numThreads > 1) && range.end - range.start > 1)
     {
         ParallelLoopBodyWrapperContext ctx(body, range, nstripes);
@@ -566,6 +581,7 @@ static void parallel_for_impl(const cv::Range& range, const cv::ParallelLoopBody
         cv::Range stripeRange = pbody.stripeRange();
         if( stripeRange.end - stripeRange.start == 1 )
         {
+            std::cout << "sequential_run" << std::endl;
             body(range);
             return;
         }
@@ -622,6 +638,7 @@ static void parallel_for_impl(const cv::Range& range, const cv::ParallelLoopBody
     }
     else
     {
+        std::cout << "sequential_run" << std::endl;
         body(range);
     }
 }

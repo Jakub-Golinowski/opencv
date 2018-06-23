@@ -43,6 +43,7 @@
 
 #include "precomp.hpp"
 #include <opencv2/core/utils/configuration.private.hpp>
+#include <iostream>
 
 ////////////////////////////////////////// kmeans ////////////////////////////////////////////
 
@@ -125,7 +126,9 @@ static void generateCentersPP(const Mat& data, Mat& _out_centers,
                 if (p <= 0)
                     break;
             }
-
+            std::cout << "Calling cv::parallel_for_() from generateCentersPP"
+                      << "N = " << N
+                      << std::endl;
             parallel_for_(Range(0, N),
                           KMeansPPDistanceComputer(tdist2, data, dist, ci),
                           (double)divUp((size_t)(dims * N), CV_KMEANS_PARALLEL_GRANULARITY));
@@ -426,6 +429,10 @@ double cv::kmeans( InputArray _data, int K,
 
             bool isLastIter = (++iter == MAX(criteria.maxCount, 2) || max_center_shift <= criteria.epsilon);
 
+            std::cout << "Calling cv::parallel_for_() from kmeans with:"
+                      << " N = " << N
+                      << " | isLastIter = " << isLastIter
+                      << std::endl;
             if (isLastIter)
             {
                 // don't re-assign labels to avoid creation of empty clusters
