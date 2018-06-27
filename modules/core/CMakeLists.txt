@@ -69,6 +69,7 @@ ocv_target_link_libraries(${the_module} LINK_PRIVATE
 )
 
 if(HAVE_HPX)
+  message("HPX Libraries: ${HPX_LIBRARIES}")
   ocv_target_link_libraries(${the_module} LINK_PRIVATE "${HPX_LIBRARIES}")
 endif()
 
