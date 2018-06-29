@@ -4,7 +4,7 @@
 #  pragma warning(disable:4447) // Disable warning 'main' signature found without threading model
 # endif
 #endif
-#ifndef HPX_STARTSTOP
+#if defined(HAVE_HPX) && !defined(HPX_STARTSTOP)
     #include <hpx/hpx_main.hpp>
 #endif
 
